@@ -99,13 +99,17 @@ class PatientViewModel(
     }
 
 
-    fun updatePatient(patientId: Int, newName: String, date: String, ownerId: Int) {
+    fun updatePatient(patientId: Int, name: String, date: String, ownerId: Int) {
         viewModelScope.launch {
             try {
-                val data = mapOf("namak" to newName, "rawatinapk" to date, "fk_iduserp" to ownerId.toString())
+                val data = mapOf(
+                    "namak" to name,
+                    "rawatinapk" to date,
+                    "fk_iduserp" to ownerId.toString()
+                )
                 val response = RetrofitClient.ownerApi.updatePatient(patientId, data)
                 if (response.isSuccessful) {
-                    loadOwnerDetails(ownerId)
+                    loadOwnerDetails(ownerId) // Refresh list
                 }
             } catch (e: Exception) {
                 _error.value = "Update failed: ${e.message}"

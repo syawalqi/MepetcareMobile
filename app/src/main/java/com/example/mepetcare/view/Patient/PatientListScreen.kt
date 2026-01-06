@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mepetcare.data.model.Owner
+import com.example.mepetcare.data.model.Patient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,49 +88,93 @@ fun OwnerDetailView(
     val pets by viewModel.selectedOwnerPets.collectAsState()
     val loading by viewModel.loading.collectAsState()
 
+    // Create Form State
+    var newPetName by remember { mutableStateOf("") }
+    var newPetDate by remember { mutableStateOf("") }
+
+    // Edit Popup State
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingPet by remember { mutableStateOf<Patient?>(null) }
+    var editName by remember { mutableStateOf("") }
+    var editDate by remember { mutableStateOf("") }
+
     LaunchedEffect(owner.id) {
         viewModel.loadOwnerDetails(owner.id)
     }
 
+    // --- FR-24: EDIT POPUP DIALOG ---
+    if (showEditDialog && editingPet != null) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Patient") },
+            text = {
+                Column {
+                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("Name") })
+                    OutlinedTextField(value = editDate, onValueChange = { editDate = it }, label = { Text("Date (YYYY-MM-DD)") })
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    // This calls your PUT /pasienk/:id/update
+                    viewModel.updatePatient(editingPet!!.id, editName, editDate, owner.id)
+                    showEditDialog = false
+                }) { Text("UPDATE") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text("CANCEL") }
+            }
+        )
+    }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(owner.name) },
-                navigationIcon = {
-                    // Replaced IconButton/Icon with a simple TextButton
-                    TextButton(onClick = onBack) {
-                        Text("< Back")
-                    }
-                }
-            )
-        }
+        topBar = { TopAppBar(title = { Text(owner.name) }, navigationIcon = { TextButton(onClick = onBack) { Text("< Back") } }) }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(16.dp)) {
-            Text("Owner Details", style = MaterialTheme.typography.labelLarge)
-            Text("Email: ${owner.email}", style = MaterialTheme.typography.bodyLarge)
-            Text("Phone: ${owner.phone}", style = MaterialTheme.typography.bodyLarge)
+        Column(modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Pets List", style = MaterialTheme.typography.headlineSmall)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            if (loading) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+            // --- FR-20: FULL CREATE FORM ---
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("ADD PATIENT", style = MaterialTheme.typography.labelSmall)
+                    OutlinedTextField(value = newPetName, onValueChange = { newPetName = it }, label = { Text("Pet Name") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newPetDate, onValueChange = { newPetDate = it }, label = { Text("Admission Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                    Button(onClick = {
+                        if (newPetName.isNotEmpty()) {
+                            viewModel.addPatient(newPetName, newPetDate, owner.id) {
+                                newPetName = ""; newPetDate = ""
+                            }
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("SAVE") }
                 }
-            } else if (pets.isEmpty()) {
-                Text("No pets found for this owner.", modifier = Modifier.padding(top = 16.dp))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- LIST WITH EDIT/DELETE ---
+            if (loading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
-                LazyColumn {
+                LazyColumn(modifier = Modifier.weight(1f)) {
                     items(pets) { pet ->
                         ListItem(
                             headlineContent = { Text(pet.name) },
-                            supportingContent = { Text("Admitted: ${pet.date_in ?: "N/A"}") },
-                            // Replaced Icon with a text emoji
-                            leadingContent = { Text("🐾", style = MaterialTheme.typography.headlineSmall) },
-                            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            supportingContent = { Text("Admitted: ${pet.date_in}") },
+                            trailingContent = {
+                                Row {
+                                    // Open Edit Popup
+                                    TextButton(onClick = {
+                                        editingPet = pet
+                                        editName = pet.name
+                                        editDate = pet.date_in ?: ""
+                                        showEditDialog = true
+                                    }) { Text("EDIT") }
+
+                                    // Delete
+                                    TextButton(onClick = { viewModel.deletePatient(pet.id, owner.id) }) {
+                                        Text("DEL", color = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
