@@ -1,4 +1,4 @@
-package com.example.mepetcare.view.patient
+package com.example.mepetcare.view.admin
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mepetcare.data.model.Owner
+import com.example.mepetcare.view.admin.PatientViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
