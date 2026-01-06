@@ -36,36 +36,41 @@ class LoginViewModel(
             _loginSuccess.value = false
 
             try {
+                // 1. Try Admin Login
                 val adminResponse = repository.loginAdmin(email, password)
 
                 if (adminResponse.isSuccessful && adminResponse.body() != null) {
                     val token = adminResponse.body()!!.token
-                    tokenManager.saveToken(token)
-
-                    _userRole.value = JwtUtils.getRole(token)
-                    _loginSuccess.value = true
+                    processSuccessfulLogin(token)
                     return@launch
                 }
 
+                // 2. Only try Doctor if Admin was "Not Found" or "Unauthorized"
+                // If it's a 404/401, we proceed to check the Doctor table
                 val doctorResponse = repository.loginDoctor(email, password)
 
                 if (doctorResponse.isSuccessful && doctorResponse.body() != null) {
                     val token = doctorResponse.body()!!.token
-                    tokenManager.saveToken(token)
-
-                    _userRole.value = JwtUtils.getRole(token)
-                    _loginSuccess.value = true
+                    processSuccessfulLogin(token)
                     return@launch
                 }
 
+                // 3. If both failed
                 _error.value = "Invalid email or password"
 
             } catch (e: Exception) {
-                _error.value = e.message ?: "Network error"
+                _error.value = e.message ?: "Network error. Please check your connection."
             } finally {
                 _loading.value = false
             }
         }
+    }
+
+    // Private helper to clean up the code
+    private fun processSuccessfulLogin(token: String) {
+        tokenManager.saveToken(token)
+        _userRole.value = JwtUtils.getRole(token)
+        _loginSuccess.value = true
     }
 }
 
