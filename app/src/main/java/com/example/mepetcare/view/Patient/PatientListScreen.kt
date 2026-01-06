@@ -88,11 +88,11 @@ fun OwnerDetailView(
     val pets by viewModel.selectedOwnerPets.collectAsState()
     val loading by viewModel.loading.collectAsState()
 
-    // Create Form State
+    // Create Form State (FR-20)
     var newPetName by remember { mutableStateOf("") }
     var newPetDate by remember { mutableStateOf("") }
 
-    // Edit Popup State
+    // Edit Pop-up State (FR-24)
     var showEditDialog by remember { mutableStateOf(false) }
     var editingPet by remember { mutableStateOf<Patient?>(null) }
     var editName by remember { mutableStateOf("") }
@@ -102,20 +102,20 @@ fun OwnerDetailView(
         viewModel.loadOwnerDetails(owner.id)
     }
 
-    // --- FR-24: EDIT POPUP DIALOG ---
+    // --- FR-24: THE EDIT POP-UP ---
     if (showEditDialog && editingPet != null) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
-            title = { Text("Edit Patient") },
+            title = { Text("Edit Patient Info") },
             text = {
                 Column {
-                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("Name") })
+                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("Patient Name") })
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(value = editDate, onValueChange = { editDate = it }, label = { Text("Date (YYYY-MM-DD)") })
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    // This calls your PUT /pasienk/:id/update
                     viewModel.updatePatient(editingPet!!.id, editName, editDate, owner.id)
                     showEditDialog = false
                 }) { Text("UPDATE") }
@@ -127,40 +127,44 @@ fun OwnerDetailView(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(owner.name) }, navigationIcon = { TextButton(onClick = onBack) { Text("< Back") } }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Owner: ${owner.name}") },
+                navigationIcon = { TextButton(onClick = onBack) { Text("< Back") } }
+            )
+        }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
 
-            // --- FR-20: FULL CREATE FORM ---
-            Card(modifier = Modifier.fillMaxWidth()) {
+            // --- SECTION 1: FULL CREATE FORM (FR-20) ---
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("ADD PATIENT", style = MaterialTheme.typography.labelSmall)
-                    OutlinedTextField(value = newPetName, onValueChange = { newPetName = it }, label = { Text("Pet Name") }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = newPetDate, onValueChange = { newPetDate = it }, label = { Text("Admission Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                    Text("ADD NEW PATIENT", style = MaterialTheme.typography.labelLarge)
+                    OutlinedTextField(value = newPetName, onValueChange = { newPetName = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newPetDate, onValueChange = { newPetDate = it }, label = { Text("Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
                     Button(onClick = {
-                        if (newPetName.isNotEmpty()) {
+                        if (newPetName.isNotBlank() && newPetDate.isNotBlank()) {
                             viewModel.addPatient(newPetName, newPetDate, owner.id) {
                                 newPetName = ""; newPetDate = ""
                             }
                         }
-                    }, modifier = Modifier.fillMaxWidth()) { Text("SAVE") }
+                    }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("SAVE PATIENT") }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- LIST WITH EDIT/DELETE ---
+            // --- SECTION 2: THE LIST (FR-22, 24, 25) ---
             if (loading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(pets) { pet ->
                         ListItem(
-                            headlineContent = { Text(pet.name) },
-                            supportingContent = { Text("Admitted: ${pet.date_in}") },
+                            headlineContent = { Text("🐾 ${pet.name}") },
+                            supportingContent = { Text("In: ${pet.date_in}") },
                             trailingContent = {
                                 Row {
-                                    // Open Edit Popup
                                     TextButton(onClick = {
                                         editingPet = pet
                                         editName = pet.name
@@ -168,13 +172,13 @@ fun OwnerDetailView(
                                         showEditDialog = true
                                     }) { Text("EDIT") }
 
-                                    // Delete
                                     TextButton(onClick = { viewModel.deletePatient(pet.id, owner.id) }) {
                                         Text("DEL", color = MaterialTheme.colorScheme.error)
                                     }
                                 }
                             }
                         )
+                        HorizontalDivider()
                     }
                 }
             }
