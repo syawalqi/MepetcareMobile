@@ -8,10 +8,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mepetcare.view.login.LoginScreen
-import com.example.mepetcare.view.admin.AdminHomeScreen
 import com.example.mepetcare.view.doctor.DoctorHomeScreen
 import com.example.mepetcare.data.remote.RetrofitClient
-import com.example.mepetcare.view.patient.PatientListScreen
+import com.example.mepetcare.view.admin.PatientListScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +44,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 composable("doctor") {
-                    PatientListScreen()
+                    DoctorHomeScreen()
                 }
             }
         }
