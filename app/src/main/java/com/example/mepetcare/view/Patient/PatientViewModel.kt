@@ -62,17 +62,15 @@ class PatientViewModel(
             }
         }
     }
-    
 
-    // FR-25: Delete Patient
+
     fun deletePatient(patientId: Int, ownerId: Int) {
         viewModelScope.launch {
             try {
-                // Using your existing repository or calling Api directly
+                // This calls your router.delete("/:id/delete")
                 val response = RetrofitClient.ownerApi.deletePatient(patientId)
                 if (response.isSuccessful) {
-                    // Refresh the list immediately so the UI updates
-                    loadOwnerDetails(ownerId)
+                    loadOwnerDetails(ownerId) // Refresh the list automatically
                 }
             } catch (e: Exception) {
                 _error.value = "Delete failed: ${e.message}"
@@ -80,10 +78,10 @@ class PatientViewModel(
         }
     }
 
-    // FR-20: Create Patient
     fun addPatient(name: String, date: String, ownerId: Int, onComplete: () -> Unit) {
         viewModelScope.launch {
             try {
+                // Using your exact backend keys: namak, rawatinapk, fk_iduserp
                 val data = mapOf(
                     "namak" to name,
                     "rawatinapk" to date,
@@ -91,11 +89,26 @@ class PatientViewModel(
                 )
                 val response = RetrofitClient.ownerApi.createPatient(data)
                 if (response.isSuccessful) {
-                    loadOwnerDetails(ownerId) // Refresh list
-                    onComplete() // Clear the text fields in UI
+                    loadOwnerDetails(ownerId)
+                    onComplete() // This clears the input fields in the UI
                 }
             } catch (e: Exception) {
                 _error.value = "Add failed: ${e.message}"
+            }
+        }
+    }
+
+
+    fun updatePatient(patientId: Int, newName: String, date: String, ownerId: Int) {
+        viewModelScope.launch {
+            try {
+                val data = mapOf("namak" to newName, "rawatinapk" to date, "fk_iduserp" to ownerId.toString())
+                val response = RetrofitClient.ownerApi.updatePatient(patientId, data)
+                if (response.isSuccessful) {
+                    loadOwnerDetails(ownerId)
+                }
+            } catch (e: Exception) {
+                _error.value = "Update failed: ${e.message}"
             }
         }
     }

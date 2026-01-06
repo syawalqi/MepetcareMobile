@@ -8,6 +8,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface OwnerApi {
@@ -23,6 +24,9 @@ interface OwnerApi {
 
     @DELETE("pasienk/{id}/delete")
     suspend fun deletePatient(@Path("id") id: Int): Response<Unit>
+
+    @PUT("pasienk/{id}/update")
+    suspend fun updatePatient(@Path("id") id: Int, @Body data: Map<String, String>): Response<Unit>
 
 
 

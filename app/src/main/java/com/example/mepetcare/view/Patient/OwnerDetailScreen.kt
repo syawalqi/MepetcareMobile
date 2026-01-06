@@ -20,7 +20,6 @@ fun OwnerDetailScreen(
     val pets by viewModel.selectedOwnerPets.collectAsState()
     val loading by viewModel.loading.collectAsState()
 
-    // Form State for Adding New Pet
     var newPetName by remember { mutableStateOf("") }
     var newPetDate by remember { mutableStateOf("") }
 
@@ -38,89 +37,81 @@ fun OwnerDetailScreen(
             )
         }
     ) { padding ->
+        // We use a Column and ensure the List takes up the remaining space
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            // --- SECTION 1: OWNER INFO ---
+            // --- OWNER INFO ---
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Owner: ${owner.name}", style = MaterialTheme.typography.titleMedium)
+                    Text("Phone: ${owner.phone}")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- ADD FORM (FR-20) ---
+            // Putting the form in a Card so it's clearly visible
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "CONTACT INFO", style = MaterialTheme.typography.labelSmall)
-                    Text(text = "Phone: ${owner.phone}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "Email: ${owner.email}", style = MaterialTheme.typography.bodyLarge)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- SECTION 2: ADD NEW PET FORM (FR-20) ---
-            Text(text = "ADD NEW PATIENT", style = MaterialTheme.typography.labelSmall)
-            OutlinedTextField(
-                value = newPetName,
-                onValueChange = { newPetName = it },
-                label = { Text("Pet Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = newPetDate,
-                onValueChange = { newPetDate = it },
-                label = { Text("Admission Date (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Button(
-                onClick = {
-                    if (newPetName.isNotEmpty() && newPetDate.isNotEmpty()) {
-                        viewModel.addPatient(newPetName, newPetDate, owner.id) {
-                            newPetName = ""
-                            newPetDate = ""
-                        }
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("ADD NEW PATIENT", style = MaterialTheme.typography.labelLarge)
+                    OutlinedTextField(
+                        value = newPetName,
+                        onValueChange = { newPetName = it },
+                        label = { Text("Pet Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newPetDate,
+                        onValueChange = { newPetDate = it },
+                        label = { Text("Date (YYYY-MM-DD)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            if (newPetName.isNotEmpty()) {
+                                viewModel.addPatient(newPetName, newPetDate, owner.id) {
+                                    newPetName = ""
+                                    newPetDate = ""
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("SAVE PATIENT")
                     }
-                },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-            ) {
-                Text("SAVE PATIENT")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+            Text("PET LIST", style = MaterialTheme.typography.titleSmall)
 
-            // --- SECTION 3: PET LIST ---
-            Text(text = "REGISTERED PETS", style = MaterialTheme.typography.headlineSmall)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
+            // --- THE LIST (FR-22 & FR-25) ---
             if (loading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else if (pets.isEmpty()) {
-                Text("No pets registered for this owner.")
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
+                // The .weight(1f) ensures this list fills the rest of the screen
+                // but doesn't hide the form above it.
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(pets) { pet ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            border = CardDefaults.outlinedCardBorder()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = "🐾 ${pet.name}", style = MaterialTheme.typography.titleMedium)
-                                    Text(text = "Admitted: ${pet.date_in ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
-                                }
-
-                                // FR-25: Delete Patient
+                        ListItem(
+                            headlineContent = { Text(pet.name) },
+                            supportingContent = { Text("Admitted: ${pet.date_in}") },
+                            trailingContent = {
+                                // DELETE BUTTON (FR-25)
                                 TextButton(onClick = { viewModel.deletePatient(pet.id, owner.id) }) {
                                     Text("DELETE", color = MaterialTheme.colorScheme.error)
                                 }
                             }
-                        }
+                        )
+                        HorizontalDivider()
                     }
                 }
             }
