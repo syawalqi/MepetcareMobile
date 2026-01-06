@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">MePetCare</string>
+
+    <!-- Login -->
+    <string name="login_title">Admin Login</string>
+    <string name="email_label">Email</string>
+    <string name="password_label">Password</string>
+    <string name="login_button">Login</string>
+    <string name="login_success">Login success!</string>
+    <string name="login_failed">Login failed</string>
+</resources>
