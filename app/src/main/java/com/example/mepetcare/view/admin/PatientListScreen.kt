@@ -1,4 +1,4 @@
-package com.example.mepetcare.view.patient
+package com.example.mepetcare.view.admin
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mepetcare.data.model.Owner
 import com.example.mepetcare.data.model.Patient
+import com.example.mepetcare.view.admin.PatientViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
