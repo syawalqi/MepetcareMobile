@@ -17,5 +17,6 @@ interface AuthApi {
     suspend fun loginDoctor(
         @Body request: LoginRequest
     ): Response<LoginResponse>
+
 }
 
