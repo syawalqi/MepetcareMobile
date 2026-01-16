@@ -14,10 +14,10 @@ class PatientViewModel(
     private val repository: OwnerRepository = OwnerRepository()
 ) : ViewModel() {
 
-    // These names must match what the UI calls
     private val _owners = MutableStateFlow<List<Owner>>(emptyList())
     val owners: StateFlow<List<Owner>> = _owners
 
+    // ✅ FR-26: SUCCESS MESSAGE STATE
     private val _success = MutableStateFlow<String?>(null)
     val success: StateFlow<String?> = _success
 
@@ -49,7 +49,6 @@ class PatientViewModel(
         }
     }
 
-
     fun loadOwnerDetails(ownerId: Int) {
         viewModelScope.launch {
             _loading.value = true
@@ -70,10 +69,10 @@ class PatientViewModel(
     fun deletePatient(patientId: Int, ownerId: Int) {
         viewModelScope.launch {
             try {
-                // This calls your router.delete("/:id/delete")
                 val response = RetrofitClient.ownerApi.deletePatient(patientId)
                 if (response.isSuccessful) {
-                    loadOwnerDetails(ownerId) // Refresh the list automatically
+                    _success.value = "Pasien berhasil dihapus"
+                    loadOwnerDetails(ownerId)
                 }
             } catch (e: Exception) {
                 _error.value = "Delete failed: ${e.message}"
@@ -81,10 +80,10 @@ class PatientViewModel(
         }
     }
 
+
     fun addPatient(name: String, date: String, ownerId: Int, onComplete: () -> Unit) {
         viewModelScope.launch {
             try {
-                // Using your exact backend keys: namak, rawatinapk, fk_iduserp
                 val data = mapOf(
                     "namak" to name,
                     "rawatinapk" to date,
@@ -92,8 +91,9 @@ class PatientViewModel(
                 )
                 val response = RetrofitClient.ownerApi.createPatient(data)
                 if (response.isSuccessful) {
+                    _success.value = "Pasien berhasil ditambahkan"
                     loadOwnerDetails(ownerId)
-                    onComplete() // This clears the input fields in the UI
+                    onComplete()
                 }
             } catch (e: Exception) {
                 _error.value = "Add failed: ${e.message}"
@@ -112,7 +112,8 @@ class PatientViewModel(
                 )
                 val response = RetrofitClient.ownerApi.updatePatient(patientId, data)
                 if (response.isSuccessful) {
-                    loadOwnerDetails(ownerId) // Refresh list
+                    _success.value = "Data pasien berhasil diperbarui"
+                    loadOwnerDetails(ownerId)
                 }
             } catch (e: Exception) {
                 _error.value = "Update failed: ${e.message}"
