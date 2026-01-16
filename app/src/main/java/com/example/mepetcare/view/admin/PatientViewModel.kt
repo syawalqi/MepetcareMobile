@@ -18,6 +18,9 @@ class PatientViewModel(
     private val _owners = MutableStateFlow<List<Owner>>(emptyList())
     val owners: StateFlow<List<Owner>> = _owners
 
+    private val _success = MutableStateFlow<String?>(null)
+    val success: StateFlow<String?> = _success
+
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 

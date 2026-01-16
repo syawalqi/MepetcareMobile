@@ -5,6 +5,7 @@ import com.example.mepetcare.data.model.Patient
 import com.example.mepetcare.data.model.ServiceType
 import com.example.mepetcare.data.remote.DoctorApi
 import com.example.mepetcare.data.remote.RetrofitClient
+import com.example.mepetcare.data.model.MedicalRecord
 import retrofit2.Response
 
 class DoctorRepository(private val api: DoctorApi = RetrofitClient.doctorApi) {
@@ -17,4 +18,9 @@ class DoctorRepository(private val api: DoctorApi = RetrofitClient.doctorApi) {
 
     suspend fun createMedicalRecord(data: Map<String, String>): Response<Unit> =
         api.createMedicalRecord(data)
+
+    suspend fun getMedicalHistory(
+        patientId: Int
+    ): Response<List<MedicalRecord>> =
+        api.getMedicalHistory(patientId)
 }

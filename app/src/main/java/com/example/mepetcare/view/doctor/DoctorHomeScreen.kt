@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,7 +12,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +28,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mepetcare.data.model.Owner
@@ -39,20 +36,18 @@ import com.example.mepetcare.data.model.Patient
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorHomeScreen(
-    viewModel: DoctorViewModel = viewModel(
-        factory = DoctorViewModelFactory(LocalContext.current)
-    )
+    viewModel: DoctorViewModel = viewModel()
 ) {
     val owners by viewModel.owners.collectAsState()
     val pets by viewModel.selectedPets.collectAsState()
+    val history by viewModel.medicalHistory.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     var selectedOwner by remember { mutableStateOf<Owner?>(null) }
+    var selectedPatientDetail by remember { mutableStateOf<Patient?>(null) }
 
     var showExamPopup by remember { mutableStateOf(false) }
     var currentPet by remember { mutableStateOf<Patient?>(null) }
-
-    var selectedPatientDetail by remember { mutableStateOf<Patient?>(null) }
-
 
     var diagnosis by remember { mutableStateOf("") }
     var treatment by remember { mutableStateOf("") }
@@ -115,6 +110,7 @@ fun DoctorHomeScreen(
                             treatment = ""
                             medication = ""
                             notes = ""
+                            viewModel.loadMedicalHistory(currentPet!!.id)
                         }
                     },
                     enabled = diagnosis.isNotBlank() && treatment.isNotBlank()
@@ -136,6 +132,10 @@ fun DoctorHomeScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
 
+            error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
+
             if (selectedOwner == null) {
                 LazyColumn {
                     items(owners) { owner ->
@@ -144,6 +144,7 @@ fun DoctorHomeScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     selectedOwner = owner
+                                    selectedPatientDetail = null
                                     viewModel.loadPets(owner.id)
                                 }
                                 .padding(vertical = 4.dp)
@@ -156,7 +157,10 @@ fun DoctorHomeScreen(
                     }
                 }
             } else {
-                TextButton(onClick = { selectedOwner = null }) {
+                TextButton(onClick = {
+                    selectedOwner = null
+                    selectedPatientDetail = null
+                }) {
                     Text("< Back to Owners")
                 }
 
@@ -171,6 +175,10 @@ fun DoctorHomeScreen(
                             headlineContent = { Text(pet.name) },
                             supportingContent = {
                                 Text("Admitted: ${pet.date_in ?: "N/A"}")
+                            },
+                            modifier = Modifier.clickable {
+                                selectedPatientDetail = pet
+                                viewModel.loadMedicalHistory(pet.id)
                             },
                             trailingContent = {
                                 Button(onClick = {
@@ -188,8 +196,36 @@ fun DoctorHomeScreen(
                         HorizontalDivider()
                     }
                 }
+
+                if (selectedPatientDetail != null) {
+                    Text(
+                        "Riwayat Pemeriksaan",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+
+                    if (history.isEmpty()) {
+                        Text("Belum ada riwayat pemeriksaan")
+                    } else {
+                        LazyColumn {
+                            items(history) { record ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(record.date)
+                                        Text(record.diagnosis, style = MaterialTheme.typography.titleMedium)
+                                        Text("Doctor: ${record.doctorName}")
+                                        Text("Treatment: ${record.treatment}")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
-
