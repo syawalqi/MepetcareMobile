@@ -18,12 +18,16 @@ interface DoctorApi {
     suspend fun getOwnerPets(@Path("id") id: Int): Response<List<Patient>>
 
     // NEW: Get historical records
-    @GET("medical-records/pasien/{idpasienk}")
-    suspend fun getMedicalHistory(@Path("idpasienk") id: Int): Response<List<MedicalRecord>>
+    @GET("medicalRecord/pasien/{idpasienk}")
+    suspend fun getMedicalHistory(
+        @Path("idpasienk") id: Int
+    ): Response<List<MedicalRecord>>
 
     // NEW: Create record (Matches your controller)
-    @POST("medical-records/create")
-    suspend fun createMedicalRecord(@Body data: Map<String, String>): Response<Unit>
+    @POST("medicalRecord/create")
+    suspend fun createMedicalRecord(
+        @Body data: Map<String, String>
+    ): Response<Unit>
 
     // Inside DoctorApi interface
     @GET("services/list") // Path based on your router export

@@ -51,6 +51,9 @@ fun DoctorHomeScreen(
     var showExamPopup by remember { mutableStateOf(false) }
     var currentPet by remember { mutableStateOf<Patient?>(null) }
 
+    var selectedPatientDetail by remember { mutableStateOf<Patient?>(null) }
+
+
     var diagnosis by remember { mutableStateOf("") }
     var treatment by remember { mutableStateOf("") }
     var medication by remember { mutableStateOf("") }

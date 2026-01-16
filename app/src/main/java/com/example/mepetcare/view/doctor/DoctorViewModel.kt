@@ -29,6 +29,9 @@ class DoctorViewModel(
     private val _selectedPets = MutableStateFlow<List<Patient>>(emptyList())
     val selectedPets = _selectedPets.asStateFlow()
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
+
     fun loadOwners() {
         viewModelScope.launch {
             val response = repository.getOwners()
@@ -57,25 +60,38 @@ class DoctorViewModel(
     ) {
         viewModelScope.launch {
             val doctorId = tokenManager.getUserId()
-            if (doctorId == -1) return@launch
+            if (doctorId == -1) {
+                _error.value = "Doctor ID tidak ditemukan"
+                return@launch
+            }
 
-            val data = mapOf(
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                .format(Date())
+
+            // ✅ SESUAI BACKEND
+            val data: Map<String, String> = mapOf(
                 "idpasienk" to patientId.toString(),
-                "idservice" to DEFAULT_SERVICE_ID.toString(),
                 "iddoctor" to doctorId.toString(),
+                "idservice" to DEFAULT_SERVICE_ID.toString(),
                 "diagnosis" to diagnosis,
                 "treatment" to treatment,
+                "date" to today,
+                // optional
                 "medication" to medication,
-                "notes" to notes,
-                "date" to SimpleDateFormat(
-                    "yyyy-MM-dd",
-                    Locale.getDefault()
-                ).format(Date())
+                "notes" to notes
             )
 
+            println("📤 SEND DATA: $data")
+
             val response = repository.createMedicalRecord(data)
+
             if (response.isSuccessful) {
+                println("✅ SAVE SUCCESS")
                 onComplete()
+            } else {
+                _error.value =
+                    "Gagal menyimpan data (${response.code()})"
+                println("SAVE FAILED: ${response.errorBody()?.string()}")
             }
         }
     }
