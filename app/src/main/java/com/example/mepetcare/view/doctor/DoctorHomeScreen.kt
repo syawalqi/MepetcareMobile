@@ -42,6 +42,7 @@ fun DoctorHomeScreen(
     val pets by viewModel.selectedPets.collectAsState()
     val history by viewModel.medicalHistory.collectAsState()
     val error by viewModel.error.collectAsState()
+    val success by viewModel.success.collectAsState()
 
     var selectedOwner by remember { mutableStateOf<Owner?>(null) }
     var selectedPatientDetail by remember { mutableStateOf<Patient?>(null) }
@@ -121,6 +122,20 @@ fun DoctorHomeScreen(
             dismissButton = {
                 TextButton(onClick = { showExamPopup = false }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // ===== SUCCESS NOTIFICATION (FR-34) =====
+    if (success != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearSuccess() },
+            title = { Text("Berhasil") },
+            text = { Text(success!!) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearSuccess() }) {
+                    Text("OK")
                 }
             }
         )
@@ -216,7 +231,10 @@ fun DoctorHomeScreen(
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Text(record.date)
-                                        Text(record.diagnosis, style = MaterialTheme.typography.titleMedium)
+                                        Text(
+                                            record.diagnosis,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
                                         Text("Doctor: ${record.doctorName}")
                                         Text("Treatment: ${record.treatment}")
                                     }

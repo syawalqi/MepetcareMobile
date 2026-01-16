@@ -24,24 +24,27 @@ class DoctorViewModel(
 
     private val DEFAULT_SERVICE_ID = 1
 
-    // ===== OWNERS =====
     private val _owners = MutableStateFlow<List<Owner>>(emptyList())
     val owners = _owners.asStateFlow()
 
-    // ===== PETS =====
     private val _selectedPets = MutableStateFlow<List<Patient>>(emptyList())
     val selectedPets = _selectedPets.asStateFlow()
 
-    // ===== MEDICAL HISTORY (INI YANG KURANG TADI) =====
     private val _medicalHistory =
         MutableStateFlow<List<MedicalRecord>>(emptyList())
     val medicalHistory = _medicalHistory.asStateFlow()
 
-    // ===== ERROR =====
+
+    private val _success = MutableStateFlow<String?>(null)
+    val success = _success.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
-    // ===== LOAD OWNERS =====
+    fun clearSuccess() {
+        _success.value = null
+    }
+
     fun loadOwners() {
         viewModelScope.launch {
             val response = repository.getOwners()
@@ -51,7 +54,6 @@ class DoctorViewModel(
         }
     }
 
-    // ===== LOAD PETS =====
     fun loadPets(ownerId: Int) {
         viewModelScope.launch {
             val response = repository.getOwnerPets(ownerId)
@@ -61,7 +63,6 @@ class DoctorViewModel(
         }
     }
 
-    // ===== LOAD MEDICAL HISTORY =====
     fun loadMedicalHistory(patientId: Int) {
         viewModelScope.launch {
             val response = repository.getMedicalHistory(patientId)
@@ -73,7 +74,6 @@ class DoctorViewModel(
         }
     }
 
-    // ===== SAVE EXAMINATION =====
     fun saveExamination(
         patientId: Int,
         diagnosis: String,
@@ -94,7 +94,7 @@ class DoctorViewModel(
                 Locale.getDefault()
             ).format(Date())
 
-            val data: Map<String, String> = mapOf(
+            val data = mapOf(
                 "idpasienk" to patientId.toString(),
                 "iddoctor" to doctorId.toString(),
                 "idservice" to DEFAULT_SERVICE_ID.toString(),
@@ -108,6 +108,7 @@ class DoctorViewModel(
             val response = repository.createMedicalRecord(data)
 
             if (response.isSuccessful) {
+                _success.value = "Rekam medis berhasil disimpan"
                 onComplete()
             } else {
                 _error.value = "Gagal menyimpan data (${response.code()})"
