@@ -21,6 +21,10 @@ class PatientViewModel(
     private val _success = MutableStateFlow<String?>(null)
     val success: StateFlow<String?> = _success
 
+    fun clearSuccess() {
+        _success.value = null
+    }
+
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 

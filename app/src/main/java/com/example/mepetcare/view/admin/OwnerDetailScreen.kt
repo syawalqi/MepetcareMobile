@@ -8,8 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import com.example.mepetcare.data.model.Owner
-import com.example.mepetcare.view.admin.PatientViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,12 +20,21 @@ fun OwnerDetailScreen(
 ) {
     val pets by viewModel.selectedOwnerPets.collectAsState()
     val loading by viewModel.loading.collectAsState()
+    val success by viewModel.success.collectAsState() // ✅ FR-26
 
     var newPetName by remember { mutableStateOf("") }
     var newPetDate by remember { mutableStateOf("") }
 
     LaunchedEffect(owner.id) {
         viewModel.loadOwnerDetails(owner.id)
+    }
+
+
+    LaunchedEffect(success) {
+        if (success != null) {
+            delay(2000)
+            viewModel.clearSuccess()
+        }
     }
 
     Scaffold(
@@ -38,13 +47,24 @@ fun OwnerDetailScreen(
             )
         }
     ) { padding ->
-        // We use a Column and ensure the List takes up the remaining space
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
+
+
+            success?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+            }
+
             // --- OWNER INFO ---
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp)) {
@@ -55,8 +75,7 @@ fun OwnerDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- ADD FORM (FR-20) ---
-            // Putting the form in a Card so it's clearly visible
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -94,20 +113,19 @@ fun OwnerDetailScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Text("PET LIST", style = MaterialTheme.typography.titleSmall)
 
-            // --- THE LIST (FR-22 & FR-25) ---
+
             if (loading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
-                // The .weight(1f) ensures this list fills the rest of the screen
-                // but doesn't hide the form above it.
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(pets) { pet ->
                         ListItem(
                             headlineContent = { Text(pet.name) },
                             supportingContent = { Text("Admitted: ${pet.date_in}") },
                             trailingContent = {
-                                // DELETE BUTTON (FR-25)
-                                TextButton(onClick = { viewModel.deletePatient(pet.id, owner.id) }) {
+                                TextButton(
+                                    onClick = { viewModel.deletePatient(pet.id, owner.id) }
+                                ) {
                                     Text("DELETE", color = MaterialTheme.colorScheme.error)
                                 }
                             }

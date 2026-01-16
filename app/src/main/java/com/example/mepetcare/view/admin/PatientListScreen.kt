@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mepetcare.data.model.Owner
 import com.example.mepetcare.data.model.Patient
-import com.example.mepetcare.view.admin.PatientViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,11 +22,20 @@ fun PatientListScreen(
     val owners by viewModel.owners.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val success by viewModel.success.collectAsState() // ✅ FR-26
 
     var selectedOwner by remember { mutableStateOf<Owner?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.loadOwners()
+    }
+
+    // ✅ AUTO CLEAR SUCCESS MESSAGE
+    LaunchedEffect(success) {
+        if (success != null) {
+            delay(2000)
+            viewModel.clearSuccess()
+        }
     }
 
     if (selectedOwner != null) {
@@ -39,36 +48,71 @@ fun PatientListScreen(
         Scaffold(
             topBar = { TopAppBar(title = { Text("Owners List") }) }
         ) { padding ->
-            when {
-                loading -> {
-                    Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+
+                // ✅ SUCCESS MESSAGE (FR-26)
+                success?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    )
                 }
-                error != null -> {
-                    Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                        Text(text = error!!, color = MaterialTheme.colorScheme.error)
+
+                when {
+                    loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
                     }
-                }
-                else -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-                        items(owners) { owner ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp)
-                                    .clickable { selectedOwner = owner },
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(text = owner.name, style = MaterialTheme.typography.titleLarge)
-                                    Text(text = "Phone: ${owner.phone}", style = MaterialTheme.typography.bodyMedium)
-                                    Text(
-                                        text = "View Pets →",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    )
+
+                    error != null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = error!!,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(owners) { owner ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                        .clickable { selectedOwner = owner },
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            text = owner.name,
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                        Text(
+                                            text = "Phone: ${owner.phone}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = "View Pets →",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -88,12 +132,11 @@ fun OwnerDetailView(
 ) {
     val pets by viewModel.selectedOwnerPets.collectAsState()
     val loading by viewModel.loading.collectAsState()
+    val success by viewModel.success.collectAsState() // ✅ FR-26
 
-    // Create Form State (FR-20)
     var newPetName by remember { mutableStateOf("") }
     var newPetDate by remember { mutableStateOf("") }
 
-    // Edit Pop-up State (FR-24)
     var showEditDialog by remember { mutableStateOf(false) }
     var editingPet by remember { mutableStateOf<Patient?>(null) }
     var editName by remember { mutableStateOf("") }
@@ -103,16 +146,32 @@ fun OwnerDetailView(
         viewModel.loadOwnerDetails(owner.id)
     }
 
-    // --- FR-24: THE EDIT POP-UP ---
+    // ✅ AUTO CLEAR SUCCESS MESSAGE
+    LaunchedEffect(success) {
+        if (success != null) {
+            delay(2000)
+            viewModel.clearSuccess()
+        }
+    }
+
+    // --- EDIT POPUP (FR-24) ---
     if (showEditDialog && editingPet != null) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
             title = { Text("Edit Patient Info") },
             text = {
                 Column {
-                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("Patient Name") })
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Patient Name") }
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = editDate, onValueChange = { editDate = it }, label = { Text("Date (YYYY-MM-DD)") })
+                    OutlinedTextField(
+                        value = editDate,
+                        onValueChange = { editDate = it },
+                        label = { Text("Date (YYYY-MM-DD)") }
+                    )
                 }
             },
             confirmButton = {
@@ -135,27 +194,62 @@ fun OwnerDetailView(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
 
-            // --- SECTION 1: FULL CREATE FORM (FR-20) ---
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            // ✅ SUCCESS MESSAGE (FR-26)
+            success?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+            }
+
+            // --- ADD FORM (FR-20) ---
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text("ADD NEW PATIENT", style = MaterialTheme.typography.labelLarge)
-                    OutlinedTextField(value = newPetName, onValueChange = { newPetName = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = newPetDate, onValueChange = { newPetDate = it }, label = { Text("Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
-                    Button(onClick = {
-                        if (newPetName.isNotBlank() && newPetDate.isNotBlank()) {
-                            viewModel.addPatient(newPetName, newPetDate, owner.id) {
-                                newPetName = ""; newPetDate = ""
+                    OutlinedTextField(
+                        value = newPetName,
+                        onValueChange = { newPetName = it },
+                        label = { Text("Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newPetDate,
+                        onValueChange = { newPetDate = it },
+                        label = { Text("Date (YYYY-MM-DD)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            if (newPetName.isNotBlank() && newPetDate.isNotBlank()) {
+                                viewModel.addPatient(newPetName, newPetDate, owner.id) {
+                                    newPetName = ""
+                                    newPetDate = ""
+                                }
                             }
-                        }
-                    }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("SAVE PATIENT") }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("SAVE PATIENT")
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- SECTION 2: THE LIST (FR-22, 24, 25) ---
+            // --- LIST (FR-22, 24, 25) ---
             if (loading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
@@ -173,7 +267,9 @@ fun OwnerDetailView(
                                         showEditDialog = true
                                     }) { Text("EDIT") }
 
-                                    TextButton(onClick = { viewModel.deletePatient(pet.id, owner.id) }) {
+                                    TextButton(
+                                        onClick = { viewModel.deletePatient(pet.id, owner.id) }
+                                    ) {
                                         Text("DEL", color = MaterialTheme.colorScheme.error)
                                     }
                                 }
